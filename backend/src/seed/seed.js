@@ -12,6 +12,12 @@ const electricity = require('../services/electricity.service');
 const billing = require('../services/billing.service');
 const payments = require('../services/payment.service');
 const { notifyUsers } = require('../services/notification.service');
+
+// Sample data is for the local emulators only: never fill the live database with demo tenants.
+if (!usingEmulators) {
+  console.error('Refusing to add sample data: this is the live database. Use the local emulators (USE_FIREBASE_EMULATORS=true).');
+  process.exit(1);
+}
 const { manilaNow } = require('../services/dashboard.service');
 const { incrementCounter, now, uniqueRef } = require('../db');
 const { ROLE, TENANT_STATUS } = require('../constants');

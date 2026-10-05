@@ -9,10 +9,12 @@ const env = {
   isProd: process.env.NODE_ENV === 'production',
   isTest: process.env.NODE_ENV === 'test',
   port: toInt(process.env.PORT, 5000),
-  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173')
-    .split(',')
-    .map((s) => s.trim())
+  /** Browser sites allowed to call the API: FRONTEND_URL (e.g. the Netlify site) plus CORS_ORIGINS (comma-separated). */
+  corsOrigins: [process.env.FRONTEND_URL || '', ...(process.env.CORS_ORIGINS || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5173')).split(',')]
+    .map((s) => s.trim().replace(/\/+$/, ''))
     .filter(Boolean),
+  /** Public link where tenants download the app (e.g. an APK on GitHub Releases or a Play Store page). */
+  tenantAppUrl: (process.env.TENANT_APP_URL || '').trim(),
 
   // ---- Firebase (server / Admin SDK). Never put these in the web or mobile apps. ----
   firebase: {
@@ -38,7 +40,7 @@ const env = {
     provider: (process.env.FILE_STORAGE || 'firebase').toLowerCase(),
     supabaseUrl: (process.env.SUPABASE_URL || '').replace(/\/+$/, ''),
     /** Supabase SECRET key (sb_secret_… or legacy service_role). Server only — never in the apps. */
-    supabaseKey: process.env.SUPABASE_SERVICE_KEY || '',
+    supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '',
     supabaseBucket: process.env.SUPABASE_BUCKET || 'boardinghouse-files',
   },
 
@@ -62,7 +64,7 @@ if (!['firebase', 'supabase'].includes(env.files.provider)) {
   throw new Error('FILE_STORAGE must be "firebase" or "supabase".');
 }
 if (env.files.provider === 'supabase' && (!env.files.supabaseUrl || !env.files.supabaseKey)) {
-  throw new Error('FILE_STORAGE=supabase needs SUPABASE_URL and SUPABASE_SERVICE_KEY in backend/.env.');
+  throw new Error('FILE_STORAGE=supabase needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_KEY).');
 }
 
 if (env.isProd && env.firebase.useEmulators) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { ArrowLeft, ExternalLink, MoreVertical, Share, SquarePlus } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, FolderOpen, MoreVertical, Share, ShieldCheck, SquarePlus } from 'lucide-react';
 import { api } from '../../api/client';
 import { Alert, Skeleton } from '../../components/ui';
 import { TENANT_APP_LINK, detectPlatform, linkIsLocalOnly } from '../../lib/tenantApp';
@@ -25,6 +25,20 @@ const STEPS = {
       { icon: SquarePlus, text: 'Choose “Install app” or “Add to Home screen”, then confirm.' },
     ],
   },
+};
+
+// Android app file (.apk, e.g. from GitHub Releases): download, then install.
+const APK_STEPS = [
+  { icon: Download, text: 'Tap “Download the app” above.' },
+  { icon: FolderOpen, text: 'Open the downloaded file (MCLEY Tenant).' },
+  { icon: ShieldCheck, text: 'If your phone asks, allow installing apps from your browser, then tap Install.' },
+];
+
+/** What kind of link the owner set: the Play Store, an Android app file, or the web version. */
+const linkKind = (url) => {
+  if (/play\.google\.com/.test(url)) return 'play';
+  if (/\.apk([?#]|$)/i.test(url) || /github\.com\/[^/]+\/[^/]+\/releases/.test(url)) return 'apk';
+  return 'web';
 };
 
 /** Where the QR code and "Download tenant app" button lead. Sends each phone to the tenant app with install steps. */
@@ -61,6 +75,8 @@ export default function TenantAppPage() {
         <Skeleton className="h-40 w-full rounded-2xl" />
       ) : !appUrl || !info.available ? (
         <Alert tone="warning">The tenant app isn&apos;t ready yet. Please ask the boarding house owner for the link.</Alert>
+      ) : linkKind(appUrl) !== 'web' ? (
+        <NativeApp url={appUrl} kind={linkKind(appUrl)} platform={platform} qr={qr} />
       ) : guide ? (
         <>
           <a
@@ -100,5 +116,48 @@ export default function TenantAppPage() {
         </Link>
       </p>
     </AuthShell>
+  );
+}
+
+/** The Android app (Play Store or .apk). iPhones can't install it, so they get a clear note instead. */
+function NativeApp({ url, kind, platform, qr }) {
+  if (platform === 'ios') {
+    return <Alert tone="info">The tenant app is for Android phones. If you use an iPhone, please ask the boarding house owner how to see your bills.</Alert>;
+  }
+  if (platform === 'desktop') {
+    return (
+      <div className="text-center">
+        <p className="text-[15px] text-slate-700">The tenant app is for Android phones. Scan this with your phone camera:</p>
+        <div className="mx-auto mt-4 w-fit rounded-2xl bg-[#fff] p-2.5">
+          {qr ? <img src={qr} alt="QR code to get the tenant app on your phone" className="h-44 w-44" /> : <Skeleton className="h-44 w-44 rounded-xl bg-slate-200" />}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <>
+      <a
+        href={url}
+        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#2f6bff] px-5 text-base font-semibold text-white shadow-sm hover:bg-[#4a80ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7ea3ff]"
+      >
+        <Download className="h-4 w-4" aria-hidden /> {kind === 'play' ? 'Get it on Google Play' : 'Download the app'}
+      </a>
+      {kind === 'apk' && (
+        <>
+          <h2 className="mt-6 text-base font-bold text-slate-900">Install it</h2>
+          <ol className="mt-3 space-y-3">
+            {APK_STEPS.map((s, n) => (
+              <li key={s.text} className="flex items-start gap-3 text-[15px] text-slate-700">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2f6bff] text-sm font-bold text-white">{n + 1}</span>
+                <span className="pt-1">
+                  <s.icon className="mr-1.5 inline h-4 w-4 align-[-2px] text-navy-300" aria-hidden />
+                  {s.text}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+    </>
   );
 }

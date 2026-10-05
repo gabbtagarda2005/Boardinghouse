@@ -1,0 +1,43 @@
+# Render Blueprint: the backend API (Node.js + Express).
+# Render → New → Blueprint → pick this repository. Secret values are entered in the Render
+# dashboard (sync: false), never in this file.
+services:
+  - type: web
+    name: mcley-boardinghouse-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: TIMEZONE
+        value: Asia/Manila
+      # Firebase (sign-in + database)
+      - key: USE_FIREBASE_EMULATORS
+        value: "false"
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT # the whole service-account JSON, pasted as one value
+        sync: false
+      # Supabase Storage (photos, payment proofs, receipts)
+      - key: FILE_STORAGE
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: boardinghouse-files
+      # The Netlify site allowed to call this API (CORS)
+      - key: FRONTEND_URL
+        sync: false
+      # Where tenants download the Android app (e.g. a GitHub Release APK link)
+      - key: TENANT_APP_URL
+        sync: false

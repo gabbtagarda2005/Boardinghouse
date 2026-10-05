@@ -20,7 +20,7 @@ const id = { params: s.idParam };
 const admin = [authenticate, adminOnly];
 const tenant = [authenticate, tenantOnly];
 
-router.get('/health', (_req, res) => res.json({ success: true, status: 'ok', time: new Date().toISOString() }));
+router.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // Public: room photos (not sensitive; used directly in <img> tags).
 // Public: the boarding house logo and name, shown on the sign-in screens of both apps.

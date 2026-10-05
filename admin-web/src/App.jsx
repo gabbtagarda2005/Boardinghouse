@@ -70,6 +70,9 @@ export default function App() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="activity" element={<ActivityHistoryPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="admin" element={<Navigate to="/" replace />} />
+          <Route path="dashboard" element={<Navigate to="/" replace />} />
+          <Route path="activity-history" element={<Navigate to="/activity" replace />} />
           <Route path="billing/*" element={<Navigate to="/bills" replace />} />
           <Route path="audit-log" element={<Navigate to="/activity" replace />} />
           <Route path="*" element={<NotFoundPage />} />

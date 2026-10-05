@@ -150,7 +150,8 @@ flutter run                                                           # Android 
 flutter run --dart-define=API_URL=http://192.168.1.20:5000/api/v1   # real phone on the same Wi-Fi (your PC's address)
 ```
 
-- With the emulators, the app signs in against the Auth emulator automatically (`USE_FIREBASE_EMULATORS` defaults to `true`).
+- The app uses the real Firebase project by default. For the local emulators add `--dart-define=USE_FIREBASE_EMULATORS=true`.
+- Release builds (`flutter build apk`) use the Render API from `lib/core/config.dart` (`productionApiUrl`), or `--dart-define=API_URL=…`.
 - Debug builds allow plain HTTP. **Release builds require HTTPS.**
 - Push notifications are used only with a real Firebase project; without one, the app checks for new notifications regularly.
 - If a web build behaves like an old version after you change dependencies, run `flutter clean` and build again.
@@ -164,8 +165,12 @@ flutter run --dart-define=API_URL=http://192.168.1.20:5000/api/v1   # real phone
 
 ## 6. Production checklist
 
+The full step-by-step deployment (Render, Netlify, Android APK) and every environment variable are in
+**[DEPLOYMENT.md](DEPLOYMENT.md)**. In short:
+
+
 - [ ] `NODE_ENV=production`, `USE_FIREBASE_EMULATORS=false`, HTTPS everywhere
-- [ ] Service-account key only on the server, not committed; `CORS_ORIGINS` set to the admin website
+- [ ] Service-account key only on the server, not committed; `FRONTEND_URL` set to the admin website (Netlify)
 - [ ] `npm run deploy:rules` done (rules + indexes); Email/Password sign-in enabled; website domain authorized
 - [ ] First owner created with `npm run create-admin` (no sample data in production)
 - [ ] Firestore backups (scheduled export) and a Firebase budget alert

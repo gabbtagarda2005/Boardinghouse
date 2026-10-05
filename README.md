@@ -1,71 +1,80 @@
-# Boarding House Management System
+# MCLEY Boarding House Management System
 
-A boarding-house management system with three parts, running on **Firebase** (Authentication, Cloud Firestore, Cloud Storage, Cloud Messaging and App Check):
+A boarding-house management system for a non-technical owner and their tenants.
 
-| App | Stack | Who uses it |
-|---|---|---|
-| [`backend/`](backend/) | Node.js, Express 5, Firebase Admin SDK, Socket.IO, node-cron, pdfkit/exceljs | Secure REST API for both apps (all money calculations happen here) |
-| [`admin-web/`](admin-web/) | React 19, Vite, React Router, Tailwind CSS 4, Firebase JS SDK | Boarding-house owner |
-| [`tenant-mobile/`](tenant-mobile/) | Flutter (Material 3), Firebase Auth/Messaging/App Check, Dio, Provider | Boarders (tenants) |
-| [`firebase/`](firebase/) | Firestore & Storage security rules, indexes, rules tests | Shared |
+| Part | Stack | Hosted on | Who uses it |
+|---|---|---|---|
+| [`admin-web/`](admin-web/) | React 19, Vite, Tailwind CSS 4, React Router | **Netlify** | Owner portal + public pages (`/inquire`, `/tenant-app`) |
+| [`backend/`](backend/) | Node.js, Express 5, Firebase Admin SDK, Socket.IO | **Render** | Secure REST API for both apps (all money calculations happen here) |
+| [`tenant-mobile/`](tenant-mobile/) | Flutter, Dart | **Android APK** | Tenants |
+| [`firebase/`](firebase/) | Firestore security rules + indexes | Firebase | Shared |
 
-Sign-in uses Firebase Authentication with an `ADMIN` or `TENANT` role (a custom claim). The backend checks the role on every request, and the security rules check it again.
-Every dashboard figure, bill, balance and report is computed by the backend from Firestore records.
+Sign-in and the database are **Firebase** (Authentication + Cloud Firestore). Uploaded files (room photos,
+payment proofs, receipts, profile photos) are in a private **Supabase Storage** bucket. Both apps talk only to
+the backend API; the backend checks every request (owner `ADMIN` vs `TENANT`), and the Firestore security rules
+check again.
 
-## Quick start (development, no Firebase account needed)
+```
+admin-web (Netlify) ─┐
+                     ├─► backend API (Render) ─► Firebase (sign-in + database) + Supabase Storage (files)
+tenant app (Android) ┘
+```
 
-Development runs entirely on the local **Firebase Emulator Suite**. Requirements: Node.js 20+ and Flutter 3.41+.
-Java is needed by the emulators. `npm run setup:java` downloads a private copy into `.tools/`, so nothing is installed system-wide.
+## Local development
 
-Use four terminals:
+Requirements: Node.js 20+, Flutter 3.41+. The local **Firebase Emulator Suite** gives you a private copy of
+sign-in and the database (Java is needed: `npm run setup:java` downloads a private copy).
 
 ```bash
-# 1. Firebase emulators (project root). Data is kept in .firebase-data between runs
+# 1. Firebase emulators (project root)
 npm install
-npm run setup:java             # first time only
-npm run emulators              # Auth :9099, Firestore :8080, Storage :9199, Emulator UI http://localhost:4000
+npm run setup:java          # first time only
+npm run emulators           # Emulator UI: http://localhost:4000
 
 # 2. Backend API
 cd backend
+cp .env.example .env        # defaults use the emulators
 npm install
-npm run seed                   # first time only: sample rooms, tenants, bills, payments
-npm start                      # http://localhost:5000/api/v1
+npm run seed                # first time: sample data (emulators only; refuses the live database)
+npm start                   # http://localhost:5000/api/v1  (health: /api/health)
 
 # 3. Admin web
 cd admin-web
+cp .env.example .env.local
 npm install
-npm start                      # http://localhost:5173
+npm run dev                 # http://localhost:5173
 
 # 4. Tenant app
 cd tenant-mobile
 flutter pub get
-flutter run -d edge            # or -d chrome. Android emulator: flutter run
+flutter run --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
-`npm run seed:reset` (backend) wipes the emulator data and reloads the samples. It refuses to run against a real Firebase project.
+Sample accounts in the emulators (after `npm run seed`): owner `admin@boardinghouse.local` / `Admin@12345`,
+tenants `maria@example.com`, `juan@example.com`, … / `Tenant@123`.
 
-**Development accounts.** The login pages list them; click one, then **Sign In**.
+## Production
 
-| Role | Email | Password |
-|---|---|---|
-| Owner (admin web) | `admin@boardinghouse.local` | `Admin@12345` |
-| Tenant (mobile app) | `maria@example.com`, `juan@example.com`, `jose@example.com` (overdue), `ana@example.com`, … | `Tenant@123` |
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**: Render (API), Netlify (website), Android APK, every
+environment variable per platform, and the deployment checklist.
 
-> If an older version of the backend is still running on port 5000, stop it first (Ctrl+C in its terminal).
+- Netlify: build `npm run build`, publish `dist` (from [`netlify.toml`](netlify.toml)).
+- Render: build `npm ci --omit=dev`, start `npm start`, health check `/api/health` (from [`render.yaml`](render.yaml)).
+- Android: `flutter build apk --release` → share the APK via a GitHub Release.
+
+## Security
+
+- No secrets in GitHub or in the apps: server keys (Firebase service account, Supabase secret key) exist only
+  as Render environment variables. `.env` files, the service-account file and `backups/` are git-ignored.
+- Passwords are handled by Firebase Authentication and are never stored or shown. The owner can only
+  **Give a New Password** (shown once, expires, must be changed) or **Send Password Reset Email**.
+- Tenant accounts start **Pending**; only the owner can approve them. Tenants see only their own records.
+- Public pages show room availability only (never tenant names or details); inquiries are rate-limited.
 
 ## Documentation
 
-- [docs/SETUP.md](docs/SETUP.md): installation, connecting a real Firebase project, **client vs server configuration**, deployment
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): architecture, Firestore collections, Storage folders, security model, workflows
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): deployment, environment variables, checklist
+- [docs/SETUP.md](docs/SETUP.md): installation, connecting a Firebase project, client vs server configuration
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): architecture, collections, storage, security model, workflows
 - [docs/API.md](docs/API.md): REST API reference
 - [docs/TESTING.md](docs/TESTING.md): automated and manual testing
-
-## Features that need external configuration
-
-| Feature | In development | How to enable |
-|---|---|---|
-| Push notifications (FCM) | In-app notifications + real-time updates (admin) + regular checks (mobile) | Real Firebase project + service account on the backend (see SETUP) |
-| Email (sending new tenants their login) | The owner sees the temporary password once and shares it | `SMTP_*` variables |
-| Password reset | Firebase sends the reset email (the Auth emulator shows the link in its log/UI) | Works automatically with a real project |
-| App Check | Off | Register the apps in App Check, then set `APP_CHECK_ENFORCE=true` |
-| Online payment gateway | **Not simulated.** All payments are verified by the owner | Not included. A gateway webhook would call `payment.service.confirmPayment` |

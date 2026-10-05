@@ -41,6 +41,8 @@ function createApp() {
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
   if (!env.isTest) app.use(morgan(env.isProd ? 'combined' : 'dev'));
 
+  // Health check for Render and uptime monitors: no details about the system.
+  app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
   app.use('/api/v1', apiLimiter, requireAppCheck, routes);
   app.use(notFound);
   app.use(errorHandler);

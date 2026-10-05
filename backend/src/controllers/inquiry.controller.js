@@ -101,8 +101,12 @@ function lanAddress() {
 
 async function appInfo(_req, res) {
   const s = await getSettings();
+  const custom = s.tenantAppUrl || env.tenantAppUrl;
+  if (custom) return res.json({ success: true, url: custom, custom: true, available: true });
+  // Development only: phones on the same Wi-Fi open this computer's copy of the app.
+  if (env.isProd) return res.json({ success: true, url: '', custom: false, available: false });
   const local = `http://${lanAddress()}:${env.port}/app/`;
-  res.json({ success: true, url: s.tenantAppUrl || local, localUrl: local, custom: Boolean(s.tenantAppUrl), available: Boolean(s.tenantAppUrl) || fs.existsSync(path.join(WEB_DIR, 'index.html')) });
+  res.json({ success: true, url: local, localUrl: local, custom: false, available: fs.existsSync(path.join(WEB_DIR, 'index.html')) });
 }
 
 module.exports = { create, list, newCount, update, remove, appInfo, WEB_DIR, STATUS };

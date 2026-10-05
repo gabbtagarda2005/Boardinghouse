@@ -52,7 +52,8 @@ async function start() {
     console.error(err.code === 'EADDRINUSE' ? `[server] Port ${env.port} is already in use. Close the other backend window and try again.` : err);
     process.exit(1);
   });
-  server.listen(env.port, () => console.log(`[server] Boarding House API ready at http://localhost:${env.port}/api/v1`));
+  // 0.0.0.0: reachable from outside the machine (Render, phones on the same Wi-Fi). Render sets PORT.
+  server.listen(env.port, '0.0.0.0', () => console.log(`[server] Boarding House API ready on port ${env.port} (/api/v1, health check /api/health)`));
 
   const shutdown = () => {
     io.close();
