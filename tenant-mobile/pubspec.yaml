@@ -1,0 +1,33 @@
+name: boarding_house_tenant
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  dio: ^5.11.1
+  firebase_app_check: ^0.4.8
+  firebase_auth: ^6.7.0
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: ^11.2.0
+  image_picker: ^1.2.3
+  intl: ^0.20.3
+  path_provider: ^2.1.6
+  provider: ^6.1.5+1
+  share_plus: ^13.3.1
+  url_launcher: ^6.3.3
+  uuid: ^4.6.0
+  web: ^1.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,1 @@
+void setFavicon(String? url) {}

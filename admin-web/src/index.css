@@ -1,0 +1,253 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* ===== Dark navy theme =====
+     The light-theme color names are kept, but re-pointed for a dark UI:
+     50–200 = dark tints (backgrounds), 300–400 = light accents, 500–700 = bright blue,
+     900–950 = deep navy. Neutral "slate" is inverted: low numbers are dark surfaces,
+     high numbers are light text. */
+  --color-navy-50: #10204a;
+  --color-navy-100: #16295c;
+  --color-navy-200: #22397a;
+  --color-navy-300: #9dbbff;
+  --color-navy-400: #74a0ff;
+  --color-navy-500: #4a85ff;
+  --color-navy-600: #3574ff;
+  --color-navy-700: #2f6bff;
+  --color-navy-800: #2559e0;
+  --color-navy-900: #0a1430;
+  --color-navy-950: #050a18;
+
+  --color-slate-50: #121e3a;
+  --color-slate-100: #18264a;
+  --color-slate-200: #223258;
+  --color-slate-300: #2f4270;
+  --color-slate-400: #5c6f98;
+  --color-slate-500: #96a6c8;
+  --color-slate-600: #afbcda;
+  --color-slate-700: #c8d2ea;
+  --color-slate-800: #dde5f6;
+  --color-slate-900: #eef3fd;
+  --color-slate-950: #f8faff;
+
+  --color-emerald-50: #062a22;
+  --color-emerald-100: #0a3d31;
+  --color-emerald-200: #0f5244;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+  --color-amber-50: #2c1f07;
+  --color-amber-100: #47320b;
+  --color-amber-200: #6b4c12;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-red-50: #2e0e14;
+  --color-red-100: #4a141c;
+  --color-red-200: #7a2230;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-orange-50: #2e1707;
+  --color-orange-100: #48230b;
+  --color-orange-200: #7a3a13;
+  --color-orange-700: #fdba74;
+  --color-violet-50: #1e1438;
+  --color-violet-100: #2d1e55;
+  --color-violet-700: #c4b5fd;
+
+  /* Page background, cards ("panel") and form fields. */
+  --color-canvas: #050a18;
+  --color-panel: #0c1630;
+  --color-field: #08112a;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 18px 40px -16px rgb(0 0 0 / 0.75);
+  /* "backwards" (not "both"): once finished, the animation leaves no transform behind, so
+     pop-ups and bars inside a page are positioned against the whole screen again. */
+  --animate-page-in: page-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    /* Native controls (date pickers, selects, checkboxes) in dark style. */
+    color-scheme: dark;
+    accent-color: #2f6bff;
+  }
+  body {
+    @apply bg-canvas text-slate-800 antialiased;
+    /* Soft blue glow at the top, like the reference design. */
+    background-image: radial-gradient(1100px 520px at 75% -8%, rgb(47 107 255 / 0.22), transparent 62%), radial-gradient(800px 420px at -10% 10%, rgb(47 107 255 / 0.1), transparent 60%);
+    background-attachment: fixed;
+    font-feature-settings: 'cv11', 'ss01';
+    /* Money, meter readings and dates line up in columns. */
+    font-variant-numeric: tabular-nums;
+    /* Safety net: the page itself never scrolls sideways (inner scrollers still can). */
+    overflow-x: clip;
+    /* Landscape iPhones: keep content clear of the notch (viewport-fit=cover). */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-navy-500;
+  }
+  /* No visible scrollbars anywhere (the owner's request); scrolling itself is unchanged. */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
+  ::selection {
+    @apply bg-navy-700 text-white;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      transition-duration: 1ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* 44px tall and 16px text on phones (no iOS zoom on focus); compact from md up. */
+  .input {
+    @apply block min-h-11 w-full rounded-2xl border border-slate-400 bg-field px-3.5 py-2 text-base text-slate-900 transition-colors placeholder:text-slate-500 hover:border-[#7a8cb6] focus:border-[#6f9bff] focus:ring-[3px] focus:ring-[#2f6bff]/60 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100 md:min-h-10 md:text-sm;
+  }
+  .input-error {
+    @apply border-red-400 focus:border-red-500 focus:ring-red-100;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+  }
+  .card {
+    @apply rounded-3xl border border-white/[0.07] bg-panel/85 shadow-card backdrop-blur-sm;
+  }
+  .th {
+    @apply bg-white/[0.03] px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase;
+  }
+  .td {
+    @apply px-4 py-3 text-sm text-slate-700;
+  }
+  /* Pill-shaped filter chips: 44px touch target on phones. */
+  .chip {
+    @apply inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold whitespace-nowrap transition-colors md:min-h-9 md:px-3.5;
+  }
+}
+
+/* Horizontal scrollers: no visible scrollbar or arrow buttons; a soft fade marks the hidden side. */
+@utility scroller {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  &.fade-r {
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  &.fade-l {
+    mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  }
+  &.fade-l.fade-r {
+    mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  }
+}
+
+/* Space for the iPhone home indicator under fixed bottom bars. */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Login page hero: a glowing arch behind the headline (CSS only, static unless motion is allowed). */
+.hero-halo {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 560px;
+  pointer-events: none;
+  background: radial-gradient(55% 55% at 50% 38%, rgb(47 107 255 / 0.32), rgb(47 107 255 / 0.08) 55%, transparent 75%);
+}
+.hero-arch {
+  position: absolute;
+  left: 50%;
+  top: -26px;
+  width: max(880px, 165vw);
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: var(--color-canvas);
+  border-top: 2px solid rgb(160 190 255 / 0.85);
+  box-shadow:
+    0 -6px 24px rgb(120 165 255 / 0.55),
+    0 -40px 110px -10px rgb(47 107 255 / 0.55),
+    inset 0 36px 70px -34px rgb(47 107 255 / 0.55);
+}
+@media (min-width: 768px) {
+  .hero-halo {
+    height: 720px;
+  }
+}
+/* Large screens (headline left, card right): the arch rises from low in part 1, behind both columns. */
+.hero-arch-wide {
+  top: auto;
+  bottom: calc(190px - max(880px, 165vw));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-halo {
+    animation: halo-breathe 7s ease-in-out infinite alternate;
+  }
+}
+@keyframes halo-breathe {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Short screens (short phones, small tablets): tighter hero so the sign-in card still fits one screen. */
+@media (max-height: 800px) and (max-width: 1023px) {
+  .hero-pill {
+    display: none;
+  }
+  .hero-title {
+    font-size: 1.65rem;
+  }
+}
+@media (max-height: 800px) and (min-width: 768px) and (max-width: 1023px) {
+  .hero-title {
+    font-size: 2.6rem;
+  }
+}
+/* Very short phones (e.g. iPhone SE): the subtitle steps aside so the sign-in card fits. */
+@media (max-height: 700px) and (max-width: 767px) {
+  .hero-sub {
+    display: none;
+  }
+  .hero-brand-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* Browser-filled sign-in fields keep the dark field colors (no light autofill background). */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-slate-900);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-field) inset;
+  caret-color: var(--color-slate-900);
+  transition: background-color 9999s ease-out 0s;
+}

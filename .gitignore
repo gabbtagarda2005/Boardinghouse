@@ -1,0 +1,28 @@
+node_modules/
+.env
+dist/
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/.devdb/
+tenant-mobile/build/
+tenant-mobile/.dart_tool/
+.tools/
+.firebase-data/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Firebase server key (never commit)
+firebase-service-account*.json
+*-firebase-adminsdk-*.json
+
+# Local environment profiles
+.env.*
+!.env.example
+
+# Database backups (contain personal data; never commit)
+backups/
+
+# Logs and local tool output
+*.log
+.vscode/

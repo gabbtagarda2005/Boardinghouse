@@ -1,0 +1,115 @@
+rules_version = '2';
+
+// Boarding House Management System: Firestore Security Rules
+//
+// The admin web app and tenant app normally talk to the Node.js backend, which uses the
+// Firebase Admin SDK (the Admin SDK is trusted and bypasses these rules). These rules are the
+// second line of defense: they control what any signed-in user could do if they called
+// Firestore directly with their own credentials.
+//
+// Roles come from Firebase Auth custom claims set by the backend: request.auth.token.role
+// is 'ADMIN' or 'TENANT'. A user can never set their own claims.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.role == 'ADMIN'; }
+    function isTenant() { return signedIn() && request.auth.token.role == 'TENANT'; }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function myTenant() {
+      return get(/databases/$(database)/documents/tenants/$(request.auth.uid)).data;
+    }
+
+    // ---------- Accounts ----------
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      // Tenants may only change harmless profile fields; never their role or status.
+      allow update: if isAdmin() || (isSelf(uid) && onlyChanges(['phone', 'profilePhoto', 'updatedAt']));
+      allow create, delete: if isAdmin();
+    }
+
+    match /tenants/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow update: if isAdmin()
+        || (isSelf(uid) && onlyChanges(['phone', 'address', 'occupation', 'emergencyContact', 'updatedAt']));
+      allow create, delete: if isAdmin();
+    }
+
+    // ---------- Rooms ----------
+    match /rooms/{roomId} {
+      // A tenant can read only the room they are assigned to.
+      allow read: if isAdmin() || (isTenant() && myTenant().currentRoomId == roomId);
+      allow write: if isAdmin();
+    }
+
+    match /roomAssignments/{assignmentId} {
+      allow read: if isAdmin() || (isTenant() && resource.data.tenantId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // ---------- Money ----------
+    match /bills/{billId} {
+      // Tenants see their own bills once sent (never drafts) and can never change them.
+      allow read: if isAdmin()
+        || (isTenant() && resource.data.tenantId == request.auth.uid && resource.data.state != 'DRAFT');
+      allow write: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || (isTenant() && resource.data.tenantId == request.auth.uid);
+      // A tenant may submit their own payment claim. It always starts as waiting for
+      // verification and cannot carry confirmation data.
+      allow create: if isTenant()
+        && request.resource.data.tenantId == request.auth.uid
+        && request.resource.data.status == 'PENDING_VERIFICATION'
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.amount <= 10000000
+        && request.resource.data.paymentMethod in ['GCASH', 'MAYA', 'BANK_TRANSFER', 'CASH', 'OTHER']
+        && !('verifiedAt' in request.resource.data)
+        && !('verifiedBy' in request.resource.data)
+        && !('receiptNumber' in request.resource.data)
+        && !('allocations' in request.resource.data);
+      // Only the owner can confirm, reject or correct payments.
+      allow update, delete: if isAdmin();
+    }
+
+    match /electricityReadings/{readingId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---------- Messages ----------
+    match /notifications/{notificationId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      // The recipient may only mark it as read.
+      allow update: if signedIn() && resource.data.userId == request.auth.uid && onlyChanges(['readAt']);
+      allow create, delete: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAdmin()
+        || (isTenant() && (resource.data.audience == 'ALL' || request.auth.uid in resource.data.recipientIds));
+      allow write: if isAdmin();
+    }
+
+    // ---------- Owner only ----------
+    match /activityHistory/{entryId} {
+      allow read: if isAdmin();
+      allow write: if false; // written only by the backend
+    }
+
+    match /settings/{settingId} {
+      // Tenants need the house name and payment instructions.
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Internal bookkeeping (counters, uniqueness locks) and anything not listed: backend only.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
