@@ -14,7 +14,8 @@ const env = {
     .map((s) => s.trim().replace(/\/+$/, ''))
     .filter(Boolean),
   /** Public link where tenants download the app (e.g. an APK on GitHub Releases or a Play Store page). */
-  tenantAppUrl: (process.env.TENANT_APP_URL || '').trim(),
+  // Only the first web address counts (protects against a link pasted twice into the setting).
+  tenantAppUrl: ((process.env.TENANT_APP_URL || '').trim().match(/^https?:\/\/.+?(?=https?:\/\/|\s|$)/) || [''])[0],
 
   // ---- Firebase (server / Admin SDK). Never put these in the web or mobile apps. ----
   firebase: {
