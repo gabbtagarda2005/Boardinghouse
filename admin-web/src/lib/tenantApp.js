@@ -20,3 +20,10 @@ export function detectPlatform(ua = navigator.userAgent, touchPoints = navigator
   if (/Android/i.test(ua)) return 'android';
   return 'desktop';
 }
+
+/** What kind of download link the owner set: the Play Store, an Android app file (.apk), or a web page. */
+export function linkKind(url) {
+  if (/play\.google\.com/.test(url || '')) return 'play';
+  if (/\.apk([?#]|$)/i.test(url || '') || /github\.com\/[^/]+\/[^/]+\/releases/.test(url || '')) return 'apk';
+  return 'web';
+}

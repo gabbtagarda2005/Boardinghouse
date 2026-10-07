@@ -3,35 +3,40 @@ import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { ArrowRight, Download, House, Smartphone } from 'lucide-react';
 import { api } from '../../api/client';
-import { TENANT_APP_LINK, linkIsLocalOnly } from '../../lib/tenantApp';
+import { TENANT_APP_LINK, linkIsLocalOnly, linkKind } from '../../lib/tenantApp';
 
-/** QR image for the tenant app link (on localhost: this computer's Wi-Fi address, since phones can't open "localhost"). */
-function useTenantQr() {
-  const [qr, setQr] = useState('');
+/**
+ * Where "Download Tenant App" and the QR code lead:
+ * - the app file itself (TENANT_APP_URL on the server, e.g. a GitHub Release APK): tapping downloads it right away;
+ * - the Play Store page, once the app is published there;
+ * - otherwise the "Get the tenant app" page (on localhost the QR uses this computer's Wi-Fi address).
+ */
+function useTenantDownload() {
+  const [state, setState] = useState({ href: TENANT_APP_LINK, apk: false, qr: '' });
   useEffect(() => {
     let alive = true;
     (async () => {
-      let target = TENANT_APP_LINK;
-      if (linkIsLocalOnly(target)) {
-        try {
-          target = (await api.get('/public/app-info')).data.url || target;
-        } catch {
-          /* keep the local link */
-        }
+      let url = '';
+      try {
+        url = (await api.get('/public/app-info')).data.url || '';
+      } catch {
+        /* keep the page link */
       }
-      const dataUrl = await QRCode.toDataURL(target, { width: 220, margin: 1, color: { dark: '#0a1226', light: '#ffffff' } });
-      if (alive) setQr(dataUrl);
+      const direct = Boolean(url) && linkKind(url) !== 'web';
+      const qrTarget = direct || (linkIsLocalOnly(TENANT_APP_LINK) && url) ? url : TENANT_APP_LINK;
+      const qr = await QRCode.toDataURL(qrTarget, { width: 220, margin: 1, color: { dark: '#0a1226', light: '#ffffff' } });
+      if (alive) setState({ href: direct ? url : TENANT_APP_LINK, apk: direct && linkKind(url) === 'apk', qr });
     })().catch(() => {});
     return () => {
       alive = false;
     };
   }, []);
-  return qr;
+  return state;
 }
 
 /** "Are you a tenant?": get the app (one link from config; QR code from md up). Used on the login and public pages. */
 export function TenantAppCard({ title = 'Are you a tenant?', text = 'Access your bills, payments, announcements, and room details from your phone.' }) {
-  const qr = useTenantQr();
+  const { href, apk, qr } = useTenantDownload();
   return (
       <section aria-labelledby="tenant-band-h" className="flex gap-4 rounded-3xl border border-[#2f6bff]/30 bg-gradient-to-br from-[#2f6bff]/[0.16] to-[#2f6bff]/[0.05] p-5 sm:gap-5 sm:p-6">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#2f6bff] text-white shadow-lg shadow-[#2f6bff]/30">
@@ -44,7 +49,9 @@ export function TenantAppCard({ title = 'Are you a tenant?', text = 'Access your
           <p className="mt-1 max-w-xl text-[15px] text-slate-700">{text}</p>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <a
-              href={TENANT_APP_LINK}
+              href={href}
+              // The app file downloads right away (no extra page).
+              download={apk ? 'mcley-tenant.apk' : undefined}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#2f6bff] px-5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#4a80ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7ea3ff]"
             >
               <Download className="h-4 w-4" aria-hidden /> Download Tenant App

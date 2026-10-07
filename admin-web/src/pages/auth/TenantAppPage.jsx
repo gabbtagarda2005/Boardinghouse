@@ -4,7 +4,7 @@ import QRCode from 'qrcode';
 import { ArrowLeft, Download, ExternalLink, FolderOpen, MoreVertical, Share, ShieldCheck, SquarePlus } from 'lucide-react';
 import { api } from '../../api/client';
 import { Alert, Skeleton } from '../../components/ui';
-import { TENANT_APP_LINK, detectPlatform, linkIsLocalOnly } from '../../lib/tenantApp';
+import { TENANT_APP_LINK, detectPlatform, linkIsLocalOnly, linkKind } from '../../lib/tenantApp';
 import AuthShell from './AuthShell';
 
 // The tenant app is a web app (PWA): it opens in the browser and can be added to the home screen.
@@ -33,13 +33,6 @@ const APK_STEPS = [
   { icon: FolderOpen, text: 'Open the downloaded file (MCLEY Tenant).' },
   { icon: ShieldCheck, text: 'If your phone asks, allow installing apps from your browser, then tap Install.' },
 ];
-
-/** What kind of link the owner set: the Play Store, an Android app file, or the web version. */
-const linkKind = (url) => {
-  if (/play\.google\.com/.test(url)) return 'play';
-  if (/\.apk([?#]|$)/i.test(url) || /github\.com\/[^/]+\/[^/]+\/releases/.test(url)) return 'apk';
-  return 'web';
-};
 
 /** Where the QR code and "Download tenant app" button lead. Sends each phone to the tenant app with install steps. */
 export default function TenantAppPage() {
